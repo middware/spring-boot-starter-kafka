@@ -151,7 +151,7 @@ public class KafkaBeanPostProcessor implements BeanPostProcessor, DisposableBean
                                     method.invoke(bean, consumerRecord);
                                 } catch (InvocationTargetException e) {
                                     if (e.getCause() != null && e.getCause() instanceof SkipMessageException) {
-                                        logger.warn("skip message {}", e.getMessage());
+                                        logger.warn("skip message " + e.getCause().getMessage(), e.getCause());
                                     } else {
                                         throw e.getCause() != null ? e.getCause() : e;
                                     }
