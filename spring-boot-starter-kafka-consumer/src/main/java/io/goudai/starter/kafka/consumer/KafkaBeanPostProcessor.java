@@ -14,6 +14,7 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 
 import javax.annotation.PostConstruct;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Properties;
@@ -146,9 +147,18 @@ public class KafkaBeanPostProcessor implements BeanPostProcessor, DisposableBean
                         if (topic.equals(consumerRecord.topic())) {
                             final String value = consumerRecord.value();
                             if (StringUtils.isNotBlank(value)) {
-                                method.invoke(bean, consumerRecord);
+                                try {
+                                    method.invoke(bean, consumerRecord);
+                                } catch (InvocationTargetException e) {
+                                    if (e.getCause() != null && e.getCause() instanceof SkipMessageException) {
+                                        logger.warn("skip message {}", e.getMessage());
+                                    } else {
+                                        throw e.getCause() != null ? e.getCause() : e;
+                                    }
+                                }
                             }
                         }
+
                         consumer.commitSync(singletonMap(
                                 new TopicPartition(consumerRecord.topic(), consumerRecord.partition()),
                                 new OffsetAndMetadata(consumerRecord.offset() + 1)));
