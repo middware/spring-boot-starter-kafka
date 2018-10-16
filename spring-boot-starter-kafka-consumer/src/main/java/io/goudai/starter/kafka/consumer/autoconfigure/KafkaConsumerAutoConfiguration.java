@@ -12,9 +12,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -25,6 +25,7 @@ public class KafkaConsumerAutoConfiguration {
 
 
     @Bean
+    @ConditionalOnMissingBean
     public KafkaBeanPostProcessor kafkaBeanPostProcessor(KafkaConsumerProperties kafkaConsumerProperties) {
         Properties properties = new Properties();
         properties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConsumerProperties.bootstrapServers);
@@ -33,7 +34,7 @@ public class KafkaConsumerAutoConfiguration {
         properties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, kafkaConsumerProperties.keyDeserializer);
         properties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, kafkaConsumerProperties.valueDeserializer);
         log.info("initing KafkaBeanPostProcessor using properties : {}", JsonUtils.toJson(properties));
-        KafkaBeanPostProcessor kafkaBeanPostProcessor = new KafkaBeanPostProcessor(properties, kafkaConsumerProperties.autoRestart);
+        KafkaBeanPostProcessor kafkaBeanPostProcessor = new KafkaBeanPostProcessor(properties, kafkaConsumerProperties);
         log.info("inited KafkaBeanPostProcessor successfully {} using properties : {}", kafkaBeanPostProcessor, JsonUtils.toJson(properties));
         return kafkaBeanPostProcessor;
     }
@@ -50,12 +51,15 @@ public class KafkaConsumerAutoConfiguration {
         return new SmsUtils();
     }
 
+
     @Setter
     @Getter
     @ConfigurationProperties(prefix = "goudai.kafka.consumer")
     public static class KafkaConsumerProperties {
 
         private String bootstrapServers;
+
+        private long timeout = 3000L;
 
         private boolean enableAutoCommit = false;
 
@@ -73,12 +77,39 @@ public class KafkaConsumerAutoConfiguration {
 
         private String sign = "【蚂蚁销客】";
 
+        private Email email = new Email();
+
         @Setter
         @Getter
         public static class AutoRestart {
             private boolean enabled = true;
             private int interval = 20;
         }
+
+
+        @Setter
+        @Getter
+        public static class Email {
+            private boolean enabled = true;
+            private Smtp smtp = new Smtp();
+            private int emailQueueSize = 100;
+
+            @Setter
+            @Getter
+            public static class Smtp {
+                private String host = "";
+                private int port = 465;
+                private String username = "";
+                private String password = "";
+                private boolean useSSL = true;
+                private boolean debugMode = false;
+                private String from = "";
+                private List<String> to = Arrays.asList("");
+
+            }
+        }
+
+
     }
 
 }

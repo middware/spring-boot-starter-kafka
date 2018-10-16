@@ -1,6 +1,5 @@
 package io.goudai.starter.kafka.core;
 
-import java.util.Arrays;
 
 public class StringUtils {
     public static boolean isBlank(CharSequence cs) {
